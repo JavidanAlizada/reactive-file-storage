@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui/
+  api-docs:
+    path: /api-docs
+
+spring:
+  webflux:
+    multipart:
+      max-in-memory-size: 10GB
+      max-parts: 5
+      max-disk-usage-per-part: 1024KB
+      max-headers-size: 1GB
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  main:
+    debug: false
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}
+#      uri: mongodb://javidan:javidan@localhost:27017/storage_db
+      repositories:
+        enabled: true
+
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+  spring:
+    redis:
+      #      host: localhost
+      host: redis
+      port: 6379
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+      cache:
+        type: redis
+        time-to-live: 60000
+        cache-evict:
+          size: 1000
+          policy: LRU
+
+jwt:
+  salt: ThisIssalT00019127324353
+  secret: thisissecret
+  expires: 30000000
+
+file:
+  storage:
+    path: C:/Desktop/storage_example
+

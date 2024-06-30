@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=javidan
+      - MONGO_INITDB_ROOT_PASSWORD=javidan
+      - MONGO_INITDB_DATABASE=storage_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - "./mongo_folder/mongodb_data:/data/db"
+      - "./mongo_folder/log:/var/log/mongodb"
+      - "./mongo_folder/mongod.conf:/etc/mongod.conf.orig"
+      - "./mongo_folder/init.d:/docker-entrypoint-initdb.d"
+
+    networks:
+      - network_storage_app
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-boot-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://javidan:javidan@mongodb:27017/storage_db
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    networks:
+      - network_storage_app
+
+volumes:
+  redis-data:
+  mongodb_data:
+
+networks:
+  network_storage_app:
+    driver: bridge
