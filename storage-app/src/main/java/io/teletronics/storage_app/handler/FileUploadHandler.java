@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -64,12 +65,12 @@ public class FileUploadHandler {
         this.fileContentHashRepository = fileContentHashRepository;
     }
 
-    public Mono<UploadedFileResponse> handle(Part file, String filename, String visibility, Set<String> tags, ServerWebExchange exchange) {
+    public Mono<UploadedFileResponse> handle(Part file, String filename, String visibility, Set<String> tags,  long contentLength, ServerWebExchange exchange) {
         return helper.getUsernameFromTokenAsMono(exchange)
                 .flatMap(username -> checkFileContentAndNameUniquenessAcrossFilesOfCurrentUser(file, filename, username)
                         .switchIfEmpty(Mono.error(FileNonUniqueException::new))
                         .flatMap(savedFileContentHashDocId -> uploadFileToFileStorage(file, username, savedFileContentHashDocId)
-                                .flatMap(filePath -> insertFileMetadataToMongoDocument(filePath, filename, visibility, tags, file.headers().getContentType().getType(), savedFileContentHashDocId, exchange)
+                                .flatMap(filePath -> insertFileMetadataToMongoDocument(filePath, filename, visibility, tags, file, savedFileContentHashDocId, contentLength, exchange)
                                         .doOnNext(fileMetadata -> {
                                             if (file.headers().getContentType().getType() == null || file.headers().getContentType().getType().isEmpty()) {
                                                 identifyFileTypeAndUpdateDocument(fileMetadata);
@@ -201,17 +202,21 @@ public class FileUploadHandler {
     }
 
     private Mono<FileMetadataDocument> insertFileMetadataToMongoDocument(String filePath, String filename, String visibility,
-                                                                         Set<String> tags, String fileContentType,
+                                                                         Set<String> tags, Part file,
                                                                          String savedFileContentHashDocId,
+                                                                         long contentLength,
                                                                          ServerWebExchange exchange) {
         FileMetadataDocument fileMetadata = new FileMetadataDocument();
         fileMetadata.setFilePath(filePath);
         fileMetadata.setFilename(filename);
         fileMetadata.setVisibility(visibility);
-        fileMetadata.setContentType(fileContentType);
+        fileMetadata.setContentType(file.headers().getContentType().getType());
         fileMetadata.setTags(tags);
         fileMetadata.setFileHashId(savedFileContentHashDocId);
         fileMetadata.setUsername(helper.getUsernameFromToken(exchange));
+        fileMetadata.setUploadedAt(LocalDateTime.now());
+        fileMetadata.setModifiedAt(LocalDateTime.now());
+        fileMetadata.setSize(contentLength);
         return fileMetadataRepository.save(fileMetadata)
                 .onErrorMap(throwable -> new FileSavingException());
     }

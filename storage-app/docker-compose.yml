@@ -41,6 +41,7 @@ services:
       - SPRING_DATA_MONGODB_URI=mongodb://javidan:javidan@mongodb:27017/storage_db
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - FILE_STORAGE_PATH=/storage_example
     networks:
       - network_storage_app
 

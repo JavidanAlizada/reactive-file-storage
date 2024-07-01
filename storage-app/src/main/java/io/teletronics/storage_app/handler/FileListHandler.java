@@ -2,6 +2,7 @@ package io.teletronics.storage_app.handler;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.teletronics.storage_app.constants.FileSortByConstant;
 import io.teletronics.storage_app.constants.FileVisibility;
 import io.teletronics.storage_app.document.FileMetadataDocument;
 import io.teletronics.storage_app.dto.response.FileResponse;
@@ -63,7 +64,7 @@ public class FileListHandler {
                         FileMetadataQuery.builder()
                                 .username(username)
                                 .tag(tag)
-                                .sortBy(sortBy)
+                                .sortBy(FileSortByConstant.getColumnNameBySortBy(sortBy))
                                 .isAsc(isAsc)
                                 .visibility(visibility)
                                 .page(page).pageSize(pageSize).visibility(visibility).build()

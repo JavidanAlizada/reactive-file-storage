@@ -10,10 +10,10 @@ springdoc:
 spring:
   webflux:
     multipart:
-      max-in-memory-size: 10GB
-      max-parts: 5
+      max-in-memory-size: 1024KB
+      max-parts: 3
       max-disk-usage-per-part: 1024KB
-      max-headers-size: 1GB
+      max-headers-size: 5KB
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -36,8 +36,8 @@ spring:
 
   spring:
     redis:
-      #      host: localhost
-      host: redis
+      host: localhost
+#      host: redis
       port: 6379
       database: 0
       lettuce:
@@ -59,5 +59,5 @@ jwt:
 
 file:
   storage:
-    path: C:/Desktop/storage_example
+    path: ${FILE_STORAGE_PATH}
 

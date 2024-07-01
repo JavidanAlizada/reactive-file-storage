@@ -1,11 +1,10 @@
 package io.teletronics.storage_app.controller;
 
-import io.teletronics.storage_app.constants.FileVisibility;
 import io.teletronics.storage_app.dto.request.FileRenameRequest;
 import io.teletronics.storage_app.dto.response.FilesResponse;
 import io.teletronics.storage_app.dto.response.UploadedFileResponse;
-import io.teletronics.storage_app.exception.TagSizeExceedLimitException;
 import io.teletronics.storage_app.service.FileService;
+import io.teletronics.storage_app.validator.FileUploadValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -29,26 +28,28 @@ import java.util.stream.Collectors;
 public class FileController {
 
     private final FileService fileService;
+    private final FileUploadValidator fileUploadValidator;
 
     @Autowired
-    public FileController(FileService fileService) {
+    public FileController(FileService fileService, FileUploadValidator fileUploadValidator) {
         this.fileService = fileService;
+        this.fileUploadValidator = fileUploadValidator;
     }
 
-    @PostMapping(value = "/upload", consumes = MediaType.ALL_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<UploadedFileResponse>> uploadFile(@RequestPart("file") Mono<Part> file,
                                                                  @RequestPart("filename") String filename,
                                                                  @RequestPart("visibility") String visibility,
                                                                  @RequestPart("tags") String tags,
+                                                                 @RequestHeader("Content-Length") long contentLength,
                                                                  ServerWebExchange exchange) {
-        Set<String> tagsSet = Arrays.stream(tags.split(","))
-                .map(String::trim)
-                .collect(Collectors.toSet());
-        if (tagsSet.size() > 5) {
-            return Mono.error(TagSizeExceedLimitException::new);
-        }
-        FileVisibility.checkValidVisibility(visibility);
-        return file.flatMap(f -> fileService.uploadFile(f, filename, visibility, tagsSet, exchange))
+        return fileUploadValidator.validate(filename, visibility, tags)
+                .then(file.flatMap(f -> {
+                    Set<String> tagsSet = Arrays.stream(tags.split(","))
+                            .map(String::trim)
+                            .collect(Collectors.toSet());
+                    return fileService.uploadFile(f, filename, visibility, tagsSet, contentLength, exchange);
+                }))
                 .map(ResponseEntity::ok);
     }
 

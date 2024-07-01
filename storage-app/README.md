@@ -56,14 +56,20 @@ docker-compose up --build
 
 `Once the application is running, you can access it at http://localhost:8080.
 
-### API Documentation:
+### Additional Information
+**Sorting Options**:
+All possible values for sortBy parameter when listing files are:
 
-Explore and test the APIs using Swagger UI:
+* FILENAME
+* UPLOAD_DATE
+* TAG
+* CONTENT_TYPE
+* FILE_SIZE
 
-* Swagger UI: http://localhost:8080/swagger-ui/
-This provides interactive API documentation where you can try out the endpoints with sample requests.
+**Tag Migration**:
+Tags are initially loaded from tags.txt file during application startup and migrated to MongoDB for storage.
 
-Troubleshooting
+### Troubleshooting
 * Port conflicts: Ensure that ports 8080 (application), 27017 (MongoDB), and 6379 (Redis) are not used by other applications.
 * Database setup: If using Docker, check Docker logs (docker-compose logs) for any initialization errors with MongoDB or Redis containers.
 * API issues: If encountering issues with API requests, verify request payloads and ensure required headers (e.g., Authorization) are correctly set.
