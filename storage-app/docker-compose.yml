@@ -27,16 +27,23 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    hostname: redis
+    networks:
+      - network_storage_app
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: spring-boot-app
+    links:
+      - redis
     ports:
       - "8080:8080"
     depends_on:
       - mongodb
+      - redis
+    restart: always
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://javidan:javidan@mongodb:27017/storage_db
       - SPRING_REDIS_HOST=redis

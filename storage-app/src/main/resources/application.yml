@@ -8,12 +8,6 @@ springdoc:
     path: /api-docs
 
 spring:
-  webflux:
-    multipart:
-      max-in-memory-size: 1024KB
-      max-parts: 3
-      max-disk-usage-per-part: 1024KB
-      max-headers-size: 5KB
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -26,19 +20,9 @@ spring:
       repositories:
         enabled: true
 
-  jackson:
-    serialization:
-      fail-on-empty-beans: false
-
-  messages:
-    basename: messages
-    encoding: UTF-8
-
-  spring:
     redis:
-      host: localhost
-#      host: redis
-      port: 6379
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
       database: 0
       lettuce:
         pool:
@@ -51,6 +35,14 @@ spring:
         cache-evict:
           size: 1000
           policy: LRU
+
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
+  messages:
+    basename: messages
+    encoding: UTF-8
 
 jwt:
   salt: ThisIssalT00019127324353

@@ -8,7 +8,6 @@ import io.teletronics.storage_app.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -24,15 +23,13 @@ public class TagServiceImpl implements TagService {
     private final TagRepository tagRepository;
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
     private static final String CACHE_KEY_TAG = "tags";
-    private final MongoTemplate mongoTemplate;
     private static final String TAG_FILE_PATH = "tags.txt";
 
     @Autowired
     public TagServiceImpl(TagRepository tagRepository,
-                          ReactiveRedisTemplate<String, String> reactiveRedisTemplate, MongoTemplate mongoTemplate) {
+                          ReactiveRedisTemplate<String, String> reactiveRedisTemplate) {
         this.tagRepository = tagRepository;
         this.reactiveRedisTemplate = reactiveRedisTemplate;
-        this.mongoTemplate = mongoTemplate;
     }
 
     @Override
@@ -49,7 +46,7 @@ public class TagServiceImpl implements TagService {
                 .onErrorMap(throwable -> new TagNotExistException());
     }
 
-    private Mono<TagResponse> fetchTagsFromMongoAndCache() {
+    private Mono<TagResponse> fetchTagsFromMongo() {
         return this.tagRepository.findAll()
                 .map(TagDocument::getTag)
                 .flatMap(tag ->
@@ -58,6 +55,22 @@ public class TagServiceImpl implements TagService {
                 )
                 .collectList()
                 .map(TagResponse::new);
+    }
+
+    private Mono<TagResponse> fetchTagsFromMongoAndCache() {
+        return this.tagRepository.count()
+                .flatMap(count -> {
+                    if (count == 0) {
+                        return loadTagsToMongo().then(fetchTagsFromMongo());
+                    } else {
+                        return fetchTagsFromMongo();
+                    }
+                });
+    }
+
+    private Mono<Void> loadTagsToMongo() {
+        List<TagDocument> tagDocumentList = readTagsFromTxtFile();
+        return tagRepository.insert(tagDocumentList).then();
     }
 
     private List<TagDocument> readTagsFromTxtFile() {
@@ -73,19 +86,18 @@ public class TagServiceImpl implements TagService {
         }
     }
 
-    private <T> boolean collectionExists(Class<T> clazz) {
-        return this.mongoTemplate.collectionExists(clazz);
-    }
 
     @Override
     public Mono<Boolean> tagExists(String tag) {
-        if (collectionExists(TagDocument.class)) {
-            return Mono.just(Boolean.FALSE);
-        }
-
-        List<TagDocument> tagDocumentList = readTagsFromTxtFile();
-        tagRepository.insert(tagDocumentList).subscribe();
-
-        return reactiveRedisTemplate.opsForSet().isMember("tags", tag);
+        return reactiveRedisTemplate.hasKey(CACHE_KEY_TAG)
+                .flatMap(cacheKeyExist -> {
+                    if (cacheKeyExist) {
+                        return reactiveRedisTemplate.opsForSet().isMember(CACHE_KEY_TAG, tag);
+                    } else {
+                        return loadTags()
+                                .then(reactiveRedisTemplate.opsForSet().isMember(CACHE_KEY_TAG, tag));
+                    }
+                })
+                .onErrorResume(throwable -> Mono.error(new IllegalArgumentException("Failed to check tag existence", throwable)));
     }
 }
