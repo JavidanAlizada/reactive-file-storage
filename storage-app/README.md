@@ -1,5 +1,5 @@
-# Teletronics Storage Application
-The Teletronics Storage Application is a Spring Boot-based file storage and management system that allows users to upload, rename, list, delete, and download files. This README provides an overview of the application structure, setup instructions, and usage guide.
+# Reactive Storage Application
+The Reactive Storage Application is a Spring Boot-based file storage and management system that allows users to upload, rename, list, delete, and download files. This README provides an overview of the application structure, setup instructions, and usage guide.
 
 ### Features
 * File Upload: Allows users to upload files with specified metadata such as filename, visibility, and tags.
