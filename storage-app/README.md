@@ -31,8 +31,8 @@ Before running the application, ensure you have the following installed:
 
 
 ```
-git clone https://github.com/your/repository.git
-cd storage-app
+git clone https://github.com/JavidanAlizada/reactive-file-storage.git
+cd reactive-file-storage/storage-app
 ```
 2. Configure application properties:
 
